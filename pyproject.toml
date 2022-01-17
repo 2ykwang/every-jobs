@@ -8,6 +8,9 @@ authors = ["Yeonggwang <immutable000@gmail.com>"]
 python = "^3.8"
 fastapi = "^0.72.0"
 uvicorn = "^0.17.0"
+aiofiles = "^0.8.0"
+Jinja2 = "^3.0.3"
+httpx = "^0.21.3"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
