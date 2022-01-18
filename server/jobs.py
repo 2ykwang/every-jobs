@@ -6,10 +6,17 @@ import math
 import random
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
+from sqlalchemy.orm import Session
 
-from .application import cache, templates
+from .application import cache, get_db, templates
+from .models import (
+    create_keyword_or_increase,
+    get_keyword_count,
+    get_keywords,
+    get_top_keywords,
+)
 from .scrapping import IndeedScrapper, SOFScrapper
 
 router = APIRouter()
@@ -52,10 +59,12 @@ async def __get_jobs(q):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request, db: Session = Depends(get_db)):
+    keywords = [x.keyword for x in get_top_keywords(db, 7)]
+
     return templates.TemplateResponse(
         "main.html",
-        context={"request": request},
+        context={"request": request, "recommend_keywords": keywords},
     )
 
 
@@ -82,7 +91,9 @@ async def get_csv(request: Request, q: str):
 
 
 @router.get("/search", response_class=HTMLResponse)
-async def read_jobs(request: Request, q: str, page: Optional[int] = 1):
+async def read_jobs(
+    request: Request, q: str, page: Optional[int] = 1, db: Session = Depends(get_db)
+):
     jobs = await __get_jobs(q)
 
     max_page = math.ceil(len(jobs) / PER_PAGE)
@@ -91,6 +102,10 @@ async def read_jobs(request: Request, q: str, page: Optional[int] = 1):
     count = len(jobs)
     print(count)
     display_jobs = jobs[start : start + PER_PAGE]  # noqa:E203
+
+    if page == 1:
+        create_keyword_or_increase(db, q)
+    print(get_top_keywords(db))
     return templates.TemplateResponse(
         "main.html",
         context={

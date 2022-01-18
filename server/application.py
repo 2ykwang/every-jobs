@@ -5,8 +5,21 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from . import models
+from .database import SessionLocal, engine
+
 templates: Jinja2Templates = Jinja2Templates(directory="server/templates")
 cache: Cache = Cache(directory=".cache")
+
+models.Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # application factory pattern

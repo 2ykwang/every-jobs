@@ -113,6 +113,12 @@
               </div> 
             </div> 
             {% else %}
+            {% if recommend_keywords %}
+            <div class="nes-container is-dark with-title">
+              <p class="title">추천 검색어</p>
+              <span class="text-center">{% for keyword in recommend_keywords %}<a class ="h5 nes-text is-success" href="/search?q={{keyword}}">{{keyword}}</a> {% endfor %}</span>
+            </div>
+            {% endif %}
             <p class="nes-balloon from-left nes-pointer is-dark mb-5 mt-5"> 
                 <a class ="h5" href="https://stackoverflow.com/jobs" target="_blank">stackoverflow</a> 와 <a class ="h5" href="https://www.indeed.com/" target="_blank">indeed</a> 스크래핑 결과를 표시합니다.
             </p>
