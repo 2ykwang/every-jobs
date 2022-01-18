@@ -70,6 +70,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/download")
 async def get_csv(request: Request, q: str):
+    q = q.lower()
     jobs = await __get_jobs(q)
 
     stream = io.StringIO()
@@ -94,6 +95,7 @@ async def get_csv(request: Request, q: str):
 async def read_jobs(
     request: Request, q: str, page: Optional[int] = 1, db: Session = Depends(get_db)
 ):
+    q = q.lower()
     jobs = await __get_jobs(q)
 
     max_page = math.ceil(len(jobs) / PER_PAGE)
