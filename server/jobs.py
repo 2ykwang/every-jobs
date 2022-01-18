@@ -1,9 +1,11 @@
 import asyncio
+import csv
+import io
 import math
 from typing import Optional
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 from .application import templates
 from .scrapping import IndeedScrapper
@@ -12,7 +14,7 @@ router = APIRouter()
 
 a = IndeedScrapper()
 PER_PAGE = 10
-SEARCH_MAX_PAGE = 10
+SEARCH_MAX_PAGE = 5
 
 cache = {}
 
@@ -37,6 +39,33 @@ async def index(request: Request):
         "main.html",
         context={"request": request},
     )
+
+
+@router.get("/download")
+async def get_csv(request: Request, q: str):
+    try:
+        await __insert_data(q)
+    except Exception as e:
+        print(e)
+
+    jobs = cache.get(q, [])
+
+    stream = io.StringIO()
+    writer = csv.writer(stream)
+    writer.writerow(["title", "company", "location", "link"])
+    for job in jobs:
+        try:
+            writer.writerow(
+                [job["title"], job["company"]["name"], job["location"], job["url"]]
+            )
+        except Exception as e:
+            print(e)
+
+    response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
+
+    response.headers["Content-Disposition"] = "attachment; filename=export.csv"
+
+    return response
 
 
 @router.get("/search", response_class=HTMLResponse)
