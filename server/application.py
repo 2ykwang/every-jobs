@@ -2,10 +2,6 @@ import time
 
 from fastapi import FastAPI, Request
 
-from .scrapping import ScrapJobs
-
-scrapper = ScrapJobs()
-
 
 # application factory pattern
 def create_app() -> FastAPI:
