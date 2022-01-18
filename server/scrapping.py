@@ -117,7 +117,8 @@ class IndeedScrapper(BaseScrapper):
         response = await self._client.get(
             f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}"
         )
-        print(f"{time.time()-a} tick")
-        result = self.__parse_page(response.text)
+        text = await response.aread()
+        result = self.__parse_page(text)
 
+        print(f"{time.time()-a} tick")
         return result

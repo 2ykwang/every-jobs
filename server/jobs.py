@@ -1,5 +1,6 @@
 import asyncio
 import csv
+import functools
 import io
 import math
 import random
@@ -8,7 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 
-from .application import templates
+from .application import cache, templates
 from .scrapping import IndeedScrapper, SOFScrapper
 
 router = APIRouter()
@@ -18,11 +19,10 @@ indeed = IndeedScrapper()
 PER_PAGE = 10
 SEARCH_MAX_PAGE = 5
 
-cache = {}
-
 
 async def __insert_data(query: str) -> None:
-    if query not in cache.keys() or len(cache[query]) < 1:
+    data = cache.get(query, [])
+    if len(data) < 1:
         results = await asyncio.gather(
             *[sof.search(query, x) for x in range(0, SEARCH_MAX_PAGE)],
             *[indeed.search(query, x) for x in range(0, SEARCH_MAX_PAGE)]
@@ -37,7 +37,8 @@ async def __insert_data(query: str) -> None:
 
         random.shuffle(jobs)
         if len(jobs) > 0:
-            cache[query] = jobs
+            day = 60 * 60 * 24
+            cache.set(query, jobs, expire=day)
 
 
 async def __get_jobs(q):

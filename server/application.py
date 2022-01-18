@@ -1,10 +1,12 @@
 import time
 
+from diskcache import Cache
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 templates: Jinja2Templates = Jinja2Templates(directory="server/templates")
+cache: Cache = Cache(directory=".cache")
 
 
 # application factory pattern
