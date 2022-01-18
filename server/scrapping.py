@@ -58,8 +58,13 @@ class IndeedScrapper(BaseScrapper):
 
             # job company
             company = job.find("span", {"class": "companyName"})
-            companyUrl = f"{self.base_url}{job.find('a')['href']}"
-            companyName = company.get_text()
+            company_url_selector = job.find("a")
+            company_url = (
+                f"{self.base_url}{job.find('a')['href']}"
+                if company_url_selector
+                else None
+            )
+            company_name = company.get_text()
 
             # job location
             location = job.find("div", {"class": "companyLocation"}).get_text()
@@ -67,7 +72,7 @@ class IndeedScrapper(BaseScrapper):
             job_dict = {
                 "title": title,
                 "url": url,
-                "company": {"name": companyName, "url": companyUrl},
+                "company": {"name": company_name, "url": company_url},
                 "location": location,
             }
             result.append(job_dict)

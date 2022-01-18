@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Scrapper</title>
+
+    <link
+      href="https://unpkg.com/nes.css@latest/css/nes.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', path='/css/bootstrap.min.css') }}"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', path='/css/style.css') }}"
+      rel="stylesheet"
+    />
+    <script
+      src="{{ url_for('static', path='/js/bootstrap.bundle.min.js') }}"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <header class="sticky">
+      <div class="container">
+        <div class="nav-brand">
+          <a href="/"
+            ><h1><i class="snes-jp-logo brand-logo"></i>JOB.scrapper</h1></a
+          > 
+        </div>
+        <div class="social-buttons">
+          <div class="share">
+            <a href="https://github.com/2ykwang" target="_blank">
+            <i class="nes-icon github"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="container main">
+      <div class="row d-flex justify-content-center">
+        <div class="col-md-9">
+          <div class="card nes-container is-rounded is-dark p-4 mb-5">
+            <h3 class="heading mt-2 text-center">
+              Hi! Do you wanna find a job?
+            </h3>
+            <div class="d-flex justify-content-center px-10">
+              <form class="d-flex nes-field is-inline search" action="search" method="get">
+                <label for="search"><p class="h4">What</p></label>
+                <input
+                  type="text"
+                  id="search"
+                  name="q"
+                  class="nes-input is-dark text-center"
+                  placeholder="search..."
+                /><button type="submit" class="nes-btn" href="#">Ok</a>
+              </form>  
+            </div> 
+            {% if jobs %}
+            <small class="h5 m-1 text-center"> 
+              About <span class="nes-text is-primary">{{count}}</span> search results, <span class="nes-text is-primary">{{page}}</span> page 
+            </small>
+            <small class="text-center"> 
+              (10 items per page are displayed)
+            </small>
+            <div class="job-list row mt-3 g-1 px-4 mb-3">
+              <div class="ps-5 pe-5 rounded">
+                {% for job in jobs %}
+                    <div class="nes-container is-rounded is-dark job-card">
+                    {% if job.url %}
+                    <a href="{{job.url}}" target="_blank"><p id="inputText" class="h4">{{job.title}}</p></a>
+                    {% else%}
+                    <p class="h5">{{job.title}}</p>
+                    {% endif %}
+
+                    {% if job.company["url"] %}
+                    <a href="{{job.company["url"]}}" target="_blank"><p>🏢{{job.company["name"]}}</p></a>
+                    {% else%}
+                    <p>🏢{{job.company["name"]}}</p>
+                    {% endif%}
+                    <p>📍{{job.location}}</p>   
+                    </div>
+                {% endfor %} 
+                </div>
+              </div>
+              <div class="text-center" >
+                {% if page > 1 %}
+                <a href="/search?q={{query}}&page={{page-1}}" class="nes-btn">Prev</a>
+                {% else %}
+                <a href="#" class="nes-btn is-disabled">Prev</a>
+                {% endif %}
+
+                {% if page+1 <= max_page %}
+                <a href="/search?q={{query}}&page={{page+1}}" class="nes-btn">Next</a>
+                {% else %}
+                <a href="#" class="nes-btn is-disabled">Next</a>
+                {% endif %} 
+              </div> 
+            </div> 
+            {% else %}
+            <p class="nes-balloon from-left nes-pointer is-dark mb-5 mt-5"> 
+                <a class ="h5" href="https://stackoverflow.com/jobs" target="_blank">stackoverflow</a> 와 <a class ="h5" href="https://www.indeed.com/" target="_blank">indeed</a> 스크랩핑 결과를 표시합니다.
+            </p>
+            <i class="nes-mario"></i>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div> 
+    <script
+      src="{{ url_for('static', path='/js/common.js') }}" crossorigin="anonymous"
+    ></script>
+    <script>
+      highlight('{{query}}')
+    </script>
+
+  </body>
+</html>
