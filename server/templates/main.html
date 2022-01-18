@@ -68,19 +68,9 @@
             </small>
             
             <section class="text-center">
-              <button type="button" class="nes-btn is-primary small" onclick="document.getElementById('dialog-default').showModal();">
-                Export results
-              </button>
-              <dialog class="nes-dialog" id="dialog-default">
-                <form method="dialog">
-                  <p class="title">Save as csv file</p>
-                  <p>info: Save {{count}} search results </p>
-                  <menu class="dialog-menu">
-                    <button class="nes-btn">Cancel</button>
-                    <button class="nes-btn is-primary" onclick="window.open('/download?q={{query}}')">O K !</button> 
-                  </menu>
-                </form>
-              </dialog>
+              <a href ="/download?q={{query}}" class="nes-btn is-primary small">
+                Export {{count}} results
+              </a> 
             </section>
             <div class="job-list row mt-3 g-1 px-4 mb-3">
               <div class="ps-5 pe-5 rounded">
