@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Job Scrapper</title>
+    <title>every jobs</title>
 
     <link
       href="https://unpkg.com/nes.css@latest/css/nes.min.css"
@@ -28,14 +28,17 @@
       <div class="container">
         <div class="nav-brand">
           <a href="/"
-            ><h1><i class="snes-jp-logo brand-logo"></i>JOB.scrapper</h1></a
+            ><h1><i class="snes-jp-logo brand-logo"></i>every jobs</h1></a
           > 
         </div>
         <div class="social-buttons">
           <div class="share">
+            <a href="https://nomadcoders.co/community" target="_blank">
+            <i class="nes-icon nomad-icon"></i>
+            </a>
             <a href="https://github.com/2ykwang" target="_blank">
             <i class="nes-icon github"></i>
-            </a>
+            </a> 
           </div>
         </div>
       </div>
@@ -44,7 +47,7 @@
       <div class="row d-flex justify-content-center">
         <div class="col-md-9">
           <div class="card nes-container is-rounded is-dark p-4 mb-5">
-            <h3 class="heading mt-2 text-center">
+            <h3 class="heading mt-1 text-center">
               Hi! Do you wanna find a job?
             </h3>
             <div class="d-flex justify-content-center px-10">
@@ -56,7 +59,15 @@
                   name="q"
                   class="nes-input is-dark text-center"
                   placeholder="search..."
-                /><button type="submit" class="nes-btn" href="#">Ok</a>
+                /><button type="submit" class="nes-btn" href="#">Ok</button>
+                
+                {% if jobs %}
+                <section class="text-center">
+                  <a href ="/download?q={{query}}" class="nes-btn is-primary small">
+                    Export
+                  </a> 
+                </section>
+                {% endif %}
               </form>  
             </div> 
             {% if jobs %}
@@ -66,14 +77,9 @@
             <small class="text-center"> 
               (10 items per page are displayed)
             </small>
-            
-            <section class="text-center">
-              <a href ="/download?q={{query}}" class="nes-btn is-primary small">
-                Export {{count}} results
-              </a> 
-            </section>
+             
             <div class="job-list row mt-3 g-1 px-4 mb-3">
-              <div class="ps-5 pe-5 rounded">
+              <div class="ps-2 pe-2 rounded">
                 {% for job in jobs %}
                     <div class="nes-container is-rounded is-dark job-card">
                     {% if job.url %}
@@ -83,11 +89,11 @@
                     {% endif %}
 
                     {% if job.company["url"] %}
-                    <a href="{{job.company["url"]}}" target="_blank"><p>🏢{{job.company["name"]}}</p></a>
+                    <a href="{{job.company["url"]}}" target="_blank"><span>🏢{{job.company["name"]}}</span></a>
                     {% else%}
-                    <p>🏢{{job.company["name"]}}</p>
+                    <span>🏢{{job.company["name"]}}</span>
                     {% endif%}
-                    <p>📍{{job.location}}</p>   
+                    <span>📍{{job.location}}</span>
                     </div>
                 {% endfor %} 
                 </div>
@@ -108,7 +114,7 @@
             </div> 
             {% else %}
             <p class="nes-balloon from-left nes-pointer is-dark mb-5 mt-5"> 
-                <a class ="h5" href="https://stackoverflow.com/jobs" target="_blank">stackoverflow</a> 와 <a class ="h5" href="https://www.indeed.com/" target="_blank">indeed</a> 스크랩핑 결과를 표시합니다.
+                <a class ="h5" href="https://stackoverflow.com/jobs" target="_blank">stackoverflow</a> 와 <a class ="h5" href="https://www.indeed.com/" target="_blank">indeed</a> 스크래핑 결과를 표시합니다.
             </p>
             <i class="nes-mario"></i>
             {% endif %}

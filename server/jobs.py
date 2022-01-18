@@ -2,17 +2,19 @@ import asyncio
 import csv
 import io
 import math
+import random
 from typing import Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from .application import templates
-from .scrapping import IndeedScrapper
+from .scrapping import IndeedScrapper, SOFScrapper
 
 router = APIRouter()
 
-a = IndeedScrapper()
+sof = SOFScrapper()
+indeed = IndeedScrapper()
 PER_PAGE = 10
 SEARCH_MAX_PAGE = 5
 
@@ -22,15 +24,30 @@ cache = {}
 async def __insert_data(query: str) -> None:
     if query not in cache.keys() or len(cache[query]) < 1:
         results = await asyncio.gather(
-            *[a.search(query, x) for x in range(0, SEARCH_MAX_PAGE)]
+            *[sof.search(query, x) for x in range(0, SEARCH_MAX_PAGE)],
+            *[indeed.search(query, x) for x in range(0, SEARCH_MAX_PAGE)]
         )
 
         jobs = []
         for result in results:
+            if result is None:
+                continue
             for job in result:
                 jobs.append(job)
+
+        random.shuffle(jobs)
         if len(jobs) > 0:
             cache[query] = jobs
+
+
+async def __get_jobs(q):
+    try:
+        await __insert_data(q)
+    except Exception as e:
+        print(e)
+
+    jobs = cache.get(q, [])
+    return jobs
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -43,12 +60,7 @@ async def index(request: Request):
 
 @router.get("/download")
 async def get_csv(request: Request, q: str):
-    try:
-        await __insert_data(q)
-    except Exception as e:
-        print(e)
-
-    jobs = cache.get(q, [])
+    jobs = await __get_jobs(q)
 
     stream = io.StringIO()
     writer = csv.writer(stream)
@@ -70,12 +82,8 @@ async def get_csv(request: Request, q: str):
 
 @router.get("/search", response_class=HTMLResponse)
 async def read_jobs(request: Request, q: str, page: Optional[int] = 1):
-    try:
-        await __insert_data(q)
-    except Exception as e:
-        print(e)
+    jobs = await __get_jobs(q)
 
-    jobs = cache.get(q, [])
     max_page = math.ceil(len(jobs) / PER_PAGE)
 
     start = (page - 1) * PER_PAGE
