@@ -34,7 +34,6 @@ async def __insert_data(query: str) -> None:
             *[sof.search(query, x) for x in range(0, SEARCH_MAX_PAGE)],
             *[indeed.search(query, x) for x in range(0, SEARCH_MAX_PAGE)]
         )
-
         jobs = []
         for result in results:
             if result is None:
@@ -107,7 +106,7 @@ async def read_jobs(
 
     if page == 1:
         create_keyword_or_increase(db, q)
-    print(get_top_keywords(db))
+
     return templates.TemplateResponse(
         "main.html",
         context={

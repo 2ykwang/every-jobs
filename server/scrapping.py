@@ -49,11 +49,14 @@ class SOFScrapper(BaseScrapper):
         return result
 
     async def search(self, query: str, page: int) -> Iterable[dict]:
+        a = time.time()
         response = await self._client.get(
             f"{self.base_url}/jobs?q={query}&pg={page}", follow_redirects=True
         )
-        result = self.__parse_page(response.text)
+        text = await response.aread()
+        result = self.__parse_page(text)
 
+        print(f"{time.time()-a} tick1")
         return result
 
 
@@ -115,7 +118,7 @@ class IndeedScrapper(BaseScrapper):
         search_page = (page - 1) * self.per_page
         a = time.time()
         response = await self._client.get(
-            f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}"
+            f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}&l=Remote"
         )
         text = await response.aread()
         result = self.__parse_page(text)
