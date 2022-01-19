@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 
 class BaseScrapper(metaclass=ABCMeta):
     def __init__(self):
-        self._client: httpx.AsyncClient = httpx.AsyncClient()
         self.per_page: int = 10
         self.base_url: str = ""
 
@@ -50,11 +49,13 @@ class SOFScrapper(BaseScrapper):
 
     async def search(self, query: str, page: int) -> Iterable[dict]:
         a = time.time()
-        response = await self._client.get(
-            f"{self.base_url}/jobs?q={query}&pg={page}", follow_redirects=True
-        )
-        text = await response.aread()
-        result = self.__parse_page(text)
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.base_url}/jobs?q={query}&pg={page}", follow_redirects=True
+            )
+            text = await response.aread()
+            result = self.__parse_page(text)
 
         print(f"{time.time()-a} tick1")
         return result
@@ -75,7 +76,6 @@ class IndeedScrapper(BaseScrapper):
         bs = BeautifulSoup(html, "html.parser")
 
         jobs = bs.find_all("a", {"class", "sponTapItem"})
-        a = time.time()
 
         for job in jobs:
             # job title
@@ -107,7 +107,6 @@ class IndeedScrapper(BaseScrapper):
                 "location": location,
             }
             result.append(job_dict)
-        print(f"{time.time()-a} tick")
         # print(result)
         return result
 
@@ -117,11 +116,13 @@ class IndeedScrapper(BaseScrapper):
     async def search(self, query: str, page: int) -> Iterable[dict]:
         search_page = (page - 1) * self.per_page
         a = time.time()
-        response = await self._client.get(
-            f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}&l=Remote"
-        )
-        text = await response.aread()
-        result = self.__parse_page(text)
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}&l=Remote"
+            )
+            text = await response.aread()
+            result = self.__parse_page(text)
 
         print(f"{time.time()-a} tick")
         return result
