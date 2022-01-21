@@ -3,9 +3,10 @@ import csv
 import io
 import math
 import random
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -40,36 +41,6 @@ def __insert_jobs_in_cache(query: str, jobs: List[Any]) -> List[Any]:
     return data
 
 
-async def __insert_data(query: str, data: List[Any]) -> None:
-    data = cache.get(query, [])
-    if len(data) < 1:
-        results = await asyncio.gather(
-            *[sof.search(query, x) for x in range(0, SEARCH_MAX_PAGE)],
-            *[indeed.search(query, x) for x in range(0, SEARCH_MAX_PAGE)]
-        )
-        jobs = []
-        for result in results:
-            if result is None:
-                continue
-            for job in result:
-                jobs.append(job)
-
-        random.shuffle(jobs)
-        if len(jobs) > 0:
-            day = 60 * 60 * 24
-            cache.set(query, jobs, expire=day)
-
-
-async def __get_jobs(q):
-    try:
-        await __insert_data(q)
-    except Exception as e:
-        print(e)
-
-    jobs = cache.get(q, [])
-    return jobs
-
-
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: Session = Depends(get_db)):
     keywords = [x.keyword for x in get_top_keywords(db, 7)]
@@ -83,7 +54,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
 @router.get("/download")
 async def get_csv(request: Request, q: str):
     q = q.lower()
-    jobs = await __get_jobs(q)
+    jobs = __get_jobs_from_keyword(q)
 
     stream = io.StringIO()
     writer = csv.writer(stream)
@@ -103,19 +74,29 @@ async def get_csv(request: Request, q: str):
     return response
 
 
-async def add_jobs(query: str) -> None:
-    results = await asyncio.gather(
-        *[sof.search(query, x) for x in range(2, 2 + SEARCH_MAX_PAGE)],
-        *[indeed.search(query, x) for x in range(2, 2 + SEARCH_MAX_PAGE)]
-    )
+async def __add_jobs_work(query: str):
+    for i in range(2, SEARCH_MAX_PAGE + 1):
+        print(i)
+        results = await asyncio.gather(
+            sof.search(query, i), indeed.search(query, i), return_exceptions=True
+        )
+        await run_in_threadpool(__make_jobs_data, query, results)
+
+
+def __make_jobs_data(query, results):
     data = []
     for result in results:
-        if result is None:
+        if result is None or isinstance(result, Exception):
             continue
         for job in result:
             data.append(job)
     random.shuffle(data)
     __insert_jobs_in_cache(query, data)
+
+
+async def __add_jobs_wrapper(query: str) -> None:
+    loop = asyncio.get_event_loop()
+    loop.create_task(__add_jobs_work(query))
 
 
 @router.get("/search", response_class=HTMLResponse)
@@ -140,7 +121,7 @@ async def read_jobs(
 
         random.shuffle(data)
         jobs = __insert_jobs_in_cache(q, data)
-        background_tasks.add_task(add_jobs, q)
+        background_tasks.add_task(__add_jobs_wrapper, q)
 
     max_page = math.ceil(len(jobs) / PER_PAGE)
     start = (page - 1) * PER_PAGE

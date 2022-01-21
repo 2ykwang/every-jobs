@@ -1,3 +1,4 @@
+import asyncio
 import time
 from abc import ABCMeta, abstractmethod
 from typing import Iterable
@@ -62,10 +63,7 @@ class SOFScrapper(BaseScrapper):
 
 
 class IndeedScrapper(BaseScrapper):
-    def __init__(
-        self,
-        per_page: int = 50,
-    ):
+    def __init__(self, per_page: int = 50):
         super().__init__()
         self.per_page: int = per_page
         self.base_url: str = "https://www.indeed.com"
@@ -119,7 +117,7 @@ class IndeedScrapper(BaseScrapper):
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}&l=Remote"
+                f"{self.base_url}/jobs?q={query}&start={search_page}&limit={self.per_page}&l=Remote"  # noqa: E501
             )
             text = await response.aread()
             result = self.__parse_page(text)

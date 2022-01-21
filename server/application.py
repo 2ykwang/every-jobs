@@ -25,7 +25,6 @@ def get_db():
 # application factory pattern
 def create_app() -> FastAPI:
     app = FastAPI()
-
     from .jobs import router as jobs_router
 
     app.include_router(jobs_router)
