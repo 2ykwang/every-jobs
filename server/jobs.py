@@ -1,12 +1,11 @@
 import asyncio
 import csv
-import functools
 import io
 import math
 import random
-from typing import Optional
+from typing import Any, List, Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -27,7 +26,21 @@ PER_PAGE = 10
 SEARCH_MAX_PAGE = 5
 
 
-async def __insert_data(query: str) -> None:
+def __get_jobs_from_keyword(query: str) -> List[Any]:
+    data = cache.get(query, [])
+    return data
+
+
+def __insert_jobs_in_cache(query: str, jobs: List[Any]) -> List[Any]:
+    data = cache.get(query, [])
+    for job in jobs:
+        data.append(job)
+    day = 60 * 60 * 24
+    cache.set(query, data, expire=day)
+    return data
+
+
+async def __insert_data(query: str, data: List[Any]) -> None:
     data = cache.get(query, [])
     if len(data) < 1:
         results = await asyncio.gather(
@@ -90,18 +103,49 @@ async def get_csv(request: Request, q: str):
     return response
 
 
+async def add_jobs(query: str) -> None:
+    results = await asyncio.gather(
+        *[sof.search(query, x) for x in range(2, 2 + SEARCH_MAX_PAGE)],
+        *[indeed.search(query, x) for x in range(2, 2 + SEARCH_MAX_PAGE)]
+    )
+    data = []
+    for result in results:
+        if result is None:
+            continue
+        for job in result:
+            data.append(job)
+    random.shuffle(data)
+    __insert_jobs_in_cache(query, data)
+
+
 @router.get("/search", response_class=HTMLResponse)
 async def read_jobs(
-    request: Request, q: str, page: Optional[int] = 1, db: Session = Depends(get_db)
+    request: Request,
+    q: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    page: Optional[int] = 1,
 ):
     q = q.lower()
-    jobs = await __get_jobs(q)
+    jobs = __get_jobs_from_keyword(q)
+
+    if len(jobs) < 1:
+        results = await asyncio.gather(sof.search(q, 1), indeed.search(q, 1))
+        data = []
+        for result in results:
+            if result is None:
+                continue
+            for job in result:
+                data.append(job)
+
+        random.shuffle(data)
+        jobs = __insert_jobs_in_cache(q, data)
+        background_tasks.add_task(add_jobs, q)
 
     max_page = math.ceil(len(jobs) / PER_PAGE)
-
     start = (page - 1) * PER_PAGE
     count = len(jobs)
-    print(count)
+
     display_jobs = jobs[start : start + PER_PAGE]  # noqa:E203
 
     if page == 1:
